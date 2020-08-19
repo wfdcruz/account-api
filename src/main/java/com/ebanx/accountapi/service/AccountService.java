@@ -17,7 +17,7 @@ import java.util.NoSuchElementException;
 public class AccountService {
     private final List<Account> accounts = new ArrayList<>();
 
-    public Account createAccount(Long accountId, BigDecimal amount) {
+    public Account createAccount(String accountId, BigDecimal amount) {
         log.info("Creating an account with id: " + accountId);
         Account acc = Account.builder()
                 .id(accountId)
@@ -28,7 +28,7 @@ public class AccountService {
         return getAccount(acc.getId());
     }
 
-    public Account getAccount(Long id) throws NoSuchElementException {
+    public Account getAccount(String id) throws NoSuchElementException {
         log.info("Finding accountId: " + id);
         return accounts.stream()
                 .filter(account -> account.getId().equals(id))
@@ -39,7 +39,7 @@ public class AccountService {
                 });
     }
 
-    public BigDecimal getBalance(Long accountId){
+    public BigDecimal getBalance(String accountId) throws NoSuchElementException {
         return getAccount(accountId).getBalance();
     }
 
