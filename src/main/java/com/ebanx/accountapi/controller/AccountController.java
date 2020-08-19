@@ -13,7 +13,6 @@ import org.springframework.web.context.annotation.RequestScope;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestScope
@@ -35,38 +34,30 @@ public class AccountController {
 
     @GetMapping(value = "/balance", produces = "application/json")
     public ResponseEntity<BigDecimal> getAccount(@RequestParam String account_id) {
-        try {
-            return ResponseEntity.ok(service.getBalance(account_id));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(BigDecimal.ZERO);
-        }
+        return ResponseEntity.ok(service.getBalance(account_id));
     }
 
     @PostMapping(value = "/event", produces = "application/json")
-    public ResponseEntity<?> execute(@RequestBody AccountRequest request) {
+    public ResponseEntity<AccountResponse> execute(@RequestBody AccountRequest request) {
         AccountResponse.AccountResponseBuilder acc = AccountResponse.builder();
 
-        try {
-            switch (request.getType()) {
-                case deposit:
-                    acc.destination(service.deposit(request.getDestination(), request.getAmount()));
-                    break;
-                case withdraw:
-                    acc.origin(service.withdraw(request.getOrigin(), request.getAmount()));
-                    break;
-                case transfer:
-                    Map<String, Account> accounts = service.transfer(request);
-                    acc.origin(accounts.get("origin"));
-                    acc.destination(accounts.get("destination"));
-                    break;
-                default:
-                    throw new RuntimeException("Event not supported.");
-            }
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(acc.build());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(BigDecimal.ZERO);
+        switch (request.getType()) {
+            case deposit:
+                acc.destination(service.deposit(request.getDestination(), request.getAmount()));
+                break;
+            case withdraw:
+                acc.origin(service.withdraw(request.getOrigin(), request.getAmount()));
+                break;
+            case transfer:
+                Map<String, Account> accounts = service.transfer(request);
+                acc.origin(accounts.get("origin"));
+                acc.destination(accounts.get("destination"));
+                break;
+            default:
+                throw new RuntimeException("Event not supported.");
         }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(acc.build());
     }
 
 }
