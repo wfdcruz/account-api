@@ -2,22 +2,44 @@ package com.ebanx.accountapi.service;
 
 import com.ebanx.accountapi.controller.request.AccountRequest;
 import com.ebanx.accountapi.entity.Account;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @Service
 @Slf4j
 public class AccountService {
     private final List<Account> accounts = new ArrayList<>();
 
-    public Account createAccount(String accountId, BigDecimal amount) {
+    public Account withdraw(String originId, BigDecimal amount) throws NoSuchElementException {
+        Account acc = getAccount(originId);
+        BigDecimal newBalance = acc.getBalance().subtract(amount);
+        acc.setBalance(newBalance);
+        return acc;
+    }
+
+    public Account deposit(String id, BigDecimal amount) {
+        try {
+            Account acc = getAccount(id);
+            BigDecimal newBalance = amount.add(acc.getBalance());
+            acc.setBalance(newBalance);
+            return acc;
+        } catch (NoSuchElementException e) {
+            return createAccount(id, amount);
+        }
+    }
+
+    public Account getAccount(String id) {
+        log.info("Finding accountId: " + id);
+        return accounts.stream()
+                .filter(account -> account.getId().equals(id))
+                .findFirst()
+                .orElseThrow(NoSuchElementException::new);
+    }
+
+    public Account createAccount(String accountId, BigDecimal amount) throws NoSuchElementException {
         log.info("Creating an account with id: " + accountId);
         Account acc = Account.builder()
                 .id(accountId)
@@ -28,34 +50,23 @@ public class AccountService {
         return getAccount(acc.getId());
     }
 
-    public Account getAccount(String id) throws NoSuchElementException {
-        log.info("Finding accountId: " + id);
-        return accounts.stream()
-                .filter(account -> account.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> {
-                    log.error("Account not found");
-                    throw new NoSuchElementException();
-                });
-    }
-
     public BigDecimal getBalance(String accountId) throws NoSuchElementException {
         return getAccount(accountId).getBalance();
     }
 
-    public void reset(){
+    public void reset() {
         log.info("Clearing accounts...");
         this.accounts.clear();
     }
 
-    public Account processRequest(AccountRequest request) throws NoSuchElementException {
-        switch (request.getType()) {
-            case deposit:
-                return createAccount(request.getDestination(), request.getAmount());
-            case withdraw:
-            case transfer:
-            default:
-                throw new RuntimeException("Not implemented");
-        }
+    public Map<String, Account> transfer(AccountRequest request) throws NoSuchElementException{
+        Map<String, Account> map = new HashMap<>();
+        Account origin = withdraw(request.getOrigin(), request.getAmount());
+        Account destination = deposit(request.getDestination(), request.getAmount());
+
+        map.put("origin", origin);
+        map.put("destination", destination);
+
+        return map;
     }
 }
