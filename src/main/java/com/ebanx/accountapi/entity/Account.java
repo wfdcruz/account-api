@@ -8,6 +8,6 @@ import java.math.BigDecimal;
 @Getter
 @Builder
 public class Account {
-    private final Long id;
+    private final String id;
     private final BigDecimal balance;
 }

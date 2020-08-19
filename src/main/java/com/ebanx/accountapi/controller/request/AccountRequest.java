@@ -7,6 +7,6 @@ import java.math.BigDecimal;
 @Getter
 public class AccountRequest {
     private EventType type;
-    private Long destination;
+    private String destination;
     private BigDecimal amount;
 }
